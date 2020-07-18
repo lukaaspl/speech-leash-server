@@ -1,6 +1,6 @@
 import { validationResult } from "express-validator";
 import { v4 as uuid } from "uuid";
-import codes from "../domains/codes";
+import { codes, messages } from "../domains/responses";
 import { Controller } from "../domains/controller";
 import HttpError from "../models/http-error";
 
@@ -43,9 +43,7 @@ export const getPhraseById: Controller = (req, res, next) => {
     return res.json(phrase);
   }
 
-  next(
-    new HttpError(`Phrase with id ${phraseId} was not found`, codes.NOT_FOUND)
-  );
+  next(new HttpError(messages.RESOURCE_NOT_FOUND, codes.NOT_FOUND));
 };
 
 export const getPhrasesByUserId: Controller = (req, res, next) => {
@@ -56,17 +54,12 @@ export const getPhrasesByUserId: Controller = (req, res, next) => {
     return res.json(phrases);
   }
 
-  next(new HttpError(`No phrase was found for user with id ${userId}`));
+  next(new HttpError(messages.RESOURCE_NOT_FOUND, codes.NOT_FOUND));
 };
 
 export const addPhrase: Controller = (req, res, next) => {
   if (!validationResult(req).isEmpty()) {
-    return next(
-      new HttpError(
-        "Phrase was not passed or has invalid format",
-        codes.BAD_REQUEST
-      )
-    );
+    return next(new HttpError(messages.INVALID_DATA, codes.BAD_REQUEST));
   }
 
   const newPhrase = {
@@ -78,17 +71,12 @@ export const addPhrase: Controller = (req, res, next) => {
 
   PHRASES.push(newPhrase);
 
-  res.status(201).json(newPhrase);
+  res.status(codes.CREATED).json(newPhrase);
 };
 
 export const updatePhraseById: Controller = (req, res, next) => {
   if (!validationResult(req).isEmpty()) {
-    return next(
-      new HttpError(
-        `Phrase was not passed or has invalid format`,
-        codes.BAD_REQUEST
-      )
-    );
+    return next(new HttpError(messages.INVALID_DATA, codes.BAD_REQUEST));
   }
 
   const { phraseId } = req.params;
@@ -97,9 +85,7 @@ export const updatePhraseById: Controller = (req, res, next) => {
   const phraseIndexToUpdate = PHRASES.findIndex(({ id }) => id === phraseId);
 
   if (phraseIndexToUpdate === -1) {
-    return next(
-      new HttpError(`Phrase with id ${phraseId} was not found`, codes.NOT_FOUND)
-    );
+    return next(new HttpError(messages.RESOURCE_NOT_FOUND, codes.NOT_FOUND));
   }
 
   PHRASES[phraseIndexToUpdate].phrase = phrase;
@@ -118,12 +104,10 @@ export const deletePhraseById: Controller = (req, res, next) => {
   const phraseIndexToDelete = PHRASES.findIndex(({ id }) => id === phraseId);
 
   if (phraseIndexToDelete === -1) {
-    return next(
-      new HttpError(`Phrase with id ${phraseId} was not found`, codes.NOT_FOUND)
-    );
+    return next(new HttpError(messages.RESOURCE_NOT_FOUND, codes.NOT_FOUND));
   }
 
   PHRASES.splice(phraseIndexToDelete, 1);
 
-  res.sendStatus(200);
+  res.sendStatus(codes.OK);
 };

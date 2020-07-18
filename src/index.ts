@@ -1,6 +1,6 @@
 import bodyParser from "body-parser";
 import express, { NextFunction, Request, Response } from "express";
-import codes from "./domains/codes";
+import { codes } from "./domains/responses";
 import HttpError from "./models/http-error";
 import phrasesRouter from "./routes/phrases";
 import usersRouter from "./routes/users";

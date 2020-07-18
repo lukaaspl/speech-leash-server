@@ -1,6 +1,6 @@
 import { validationResult } from "express-validator";
 import { v4 as uuid } from "uuid";
-import codes from "../domains/codes";
+import { codes, messages } from "../domains/responses";
 import { Controller } from "../domains/controller";
 import HttpError from "../models/http-error";
 
@@ -20,7 +20,7 @@ export const getUsers: Controller = (_, res) => {
 
 export const login: Controller = (req, res, next) => {
   if (!validationResult(req).isEmpty()) {
-    return next(new HttpError("Invalid data format", codes.BAD_REQUEST));
+    return next(new HttpError(messages.INVALID_DATA, codes.BAD_REQUEST));
   }
 
   const { email, password } = req.body;
@@ -30,7 +30,9 @@ export const login: Controller = (req, res, next) => {
   );
 
   if (!foundUser) {
-    return next(new HttpError("Invalid credentials", codes.UNAUTHORIZED));
+    return next(
+      new HttpError(messages.INVALID_CREDENTIALS, codes.UNAUTHORIZED)
+    );
   }
 
   res.json(`Logged in as ${foundUser.name}`);
@@ -38,7 +40,7 @@ export const login: Controller = (req, res, next) => {
 
 export const register: Controller = (req, res, next) => {
   if (!validationResult(req).isEmpty()) {
-    return next(new HttpError("Invalid data format", codes.BAD_REQUEST));
+    return next(new HttpError(messages.INVALID_DATA, codes.BAD_REQUEST));
   }
 
   const { name, email, password } = req.body;
@@ -48,7 +50,7 @@ export const register: Controller = (req, res, next) => {
   );
 
   if (emailAlreadyExists) {
-    return next(new HttpError("E-mail already exists", codes.CONFLICT));
+    return next(new HttpError(messages.EMAIL_ALREADY_EXISTS, codes.CONFLICT));
   }
 
   const newUser = {
