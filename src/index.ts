@@ -1,5 +1,6 @@
 import bodyParser from "body-parser";
 import express, { NextFunction, Request, Response } from "express";
+import { check } from "express-validator";
 import HttpError from "./models/http-error";
 import phrasesRouter from "./routes/phrases";
 
@@ -7,7 +8,11 @@ const app: express.Application = express();
 
 app.use(bodyParser.json());
 
-app.use("/phrases", phrasesRouter);
+app.use(
+  "/phrases",
+  check("phrase").notEmpty().isString().isLength({ min: 2, max: 100 }),
+  phrasesRouter
+);
 
 app.use(() => {
   throw new HttpError("Route not found", 404);

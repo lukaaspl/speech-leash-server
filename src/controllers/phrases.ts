@@ -1,5 +1,6 @@
-import HttpError from "../models/http-error";
+import { validationResult } from "express-validator";
 import { Controller } from "../domains/controller";
+import HttpError from "../models/http-error";
 
 const PHRASES = [
   {
@@ -55,8 +56,10 @@ export const getPhrasesByUserId: Controller = (req, res, next) => {
 };
 
 export const addPhrase: Controller = (req, res, next) => {
-  if (!req.body.phrase) {
-    return next(new HttpError("Phrase is required", 400));
+  if (!validationResult(req).isEmpty()) {
+    return next(
+      new HttpError("Phrase was not passed or has invalid format", 400)
+    );
   }
 
   const newPhrase = {
@@ -72,6 +75,12 @@ export const addPhrase: Controller = (req, res, next) => {
 };
 
 export const updatePhraseById: Controller = (req, res, next) => {
+  if (!validationResult(req).isEmpty()) {
+    return next(
+      new HttpError(`Phrase was not passed or has invalid format`, 400)
+    );
+  }
+
   const { phraseId } = req.params;
   const { phrase } = req.body;
 
@@ -81,12 +90,6 @@ export const updatePhraseById: Controller = (req, res, next) => {
 
   if (phraseIndexToUpdate === -1) {
     return next(new HttpError(`Phrase with id ${phraseId} was not found`, 404));
-  }
-
-  if (!phrase || typeof phrase !== "string") {
-    return next(
-      new HttpError(`No phrase was passed in body or passed invalid one`, 400)
-    );
   }
 
   PHRASES[phraseIndexToUpdate].phrase = phrase;
