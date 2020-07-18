@@ -4,17 +4,18 @@
     "module": "commonjs",
     "sourceMap": true,
     "outDir": "build",
-    "rootDir": "src",
     "downlevelIteration": true,
     "strict": true,
     "noImplicitAny": true,
     "moduleResolution": "node",
-    "baseUrl": ".",
+    "baseUrl": "src",
     "esModuleInterop": true,
     "allowJs": true,
     "lib": ["es6"],
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
-  }
+  },
+  "include": ["src"],
+  "exclude": ["node_modules", "build"]
 }
