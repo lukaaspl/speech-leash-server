@@ -1,4 +1,4 @@
-import { Schema, model, Document, Model } from "mongoose";
+import { Document, model, Schema } from "mongoose";
 
 export interface IPhrase extends Document {
   userId: string;
@@ -6,7 +6,7 @@ export interface IPhrase extends Document {
   creationDate: number;
 }
 
-const phraseSchema = new Schema<IPhrase>({
+const phraseSchema = new Schema({
   userId: { type: String, required: true },
   phrase: { type: String, required: true },
   creationDate: { type: Number, required: true },
