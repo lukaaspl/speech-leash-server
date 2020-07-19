@@ -1,8 +1,8 @@
+import { Controller } from "domains/controller";
+import { codes, messages } from "domains/responses";
 import { validationResult } from "express-validator";
+import HttpError from "models/http-error";
 import { v4 as uuid } from "uuid";
-import { codes, messages } from "../domains/responses";
-import { Controller } from "../domains/controller";
-import HttpError from "../models/http-error";
 
 const USERS = [
   {

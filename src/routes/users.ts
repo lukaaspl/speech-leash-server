@@ -1,11 +1,11 @@
+import * as usersControllers from "controllers/users";
 import express from "express";
 import { check } from "express-validator";
-import * as usersControllers from "../controllers/users";
 
 const router = express.Router();
 
 const credentialsValidators = [
-  check("email").notEmpty().isEmail(),
+  check("email").notEmpty().normalizeEmail().isEmail(),
   check("password").notEmpty().isString().isLength({ min: 6, max: 50 }),
 ];
 

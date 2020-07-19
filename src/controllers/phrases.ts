@@ -1,113 +1,126 @@
+import { Controller } from "domains/controller";
+import { codes, messages } from "domains/responses";
 import { validationResult } from "express-validator";
-import { v4 as uuid } from "uuid";
-import { codes, messages } from "../domains/responses";
-import { Controller } from "../domains/controller";
-import HttpError from "../models/http-error";
+import HttpError from "models/http-error";
+import Phrase from "models/phrase";
+import { getInternalError } from "utils/errors";
 
-const PHRASES = [
-  {
-    id: "1",
-    userId: "1",
-    phrase: "dog",
-    creationDate: Date.now(),
-  },
-  {
-    id: "2",
-    userId: "1",
-    phrase: "cat",
-    creationDate: Date.now(),
-  },
-  {
-    id: "3",
-    userId: "3",
-    phrase: "cow",
-    creationDate: Date.now(),
-  },
-  {
-    id: "4",
-    userId: "2",
-    phrase: "horse",
-    creationDate: Date.now(),
-  },
-];
-
-export const getPhrases: Controller = (req, res) => {
-  res.json(PHRASES);
+export const getPhrases: Controller = async (req, res, next) => {
+  try {
+    const phrases = await Phrase.find();
+    const transformedPhrases = phrases.map((phrase) =>
+      phrase.toObject({ getters: true })
+    );
+    return res.json(transformedPhrases);
+  } catch {
+    next(getInternalError());
+  }
 };
 
-export const getPhraseById: Controller = (req, res, next) => {
+export const getPhraseById: Controller = async (req, res, next) => {
   const { phraseId } = req.params;
-  const phrase = PHRASES.find(({ id }) => id === phraseId);
+  let phrase;
 
-  if (phrase) {
-    return res.json(phrase);
+  try {
+    phrase = await Phrase.findById(phraseId);
+  } catch {
+    return next(getInternalError());
   }
 
-  next(new HttpError(messages.RESOURCE_NOT_FOUND, codes.NOT_FOUND));
+  if (!phrase) {
+    return next(new HttpError(messages.RESOURCE_NOT_FOUND, codes.NOT_FOUND));
+  }
+
+  res.json(phrase.toObject({ getters: true }));
 };
 
-export const getPhrasesByUserId: Controller = (req, res, next) => {
+export const getPhrasesByUserId: Controller = async (req, res, next) => {
   const { userId } = req.params;
-  const phrases = PHRASES.filter(({ userId: id }) => id === userId);
+  let phrases;
 
-  if (phrases.length) {
-    return res.json(phrases);
+  try {
+    phrases = await Phrase.find({ userId: userId });
+  } catch {
+    return next(getInternalError());
   }
 
-  next(new HttpError(messages.RESOURCE_NOT_FOUND, codes.NOT_FOUND));
+  const transformedPhrases = phrases.map((phrase) =>
+    phrase.toObject({ getters: true })
+  );
+
+  res.json(transformedPhrases);
 };
 
-export const addPhrase: Controller = (req, res, next) => {
+export const addPhrase: Controller = async (req, res, next) => {
   if (!validationResult(req).isEmpty()) {
     return next(new HttpError(messages.INVALID_DATA, codes.BAD_REQUEST));
   }
 
-  const newPhrase = {
-    id: uuid(),
-    userId: uuid(),
+  const newPhrase = new Phrase({
+    userId: "dummy-user-id",
     phrase: req.body.phrase,
     creationDate: Date.now(),
-  };
+  });
 
-  PHRASES.push(newPhrase);
+  try {
+    await newPhrase.save();
+  } catch {
+    return next(getInternalError());
+  }
 
-  res.status(codes.CREATED).json(newPhrase);
+  res.json(newPhrase.toObject({ getters: true }));
 };
 
-export const updatePhraseById: Controller = (req, res, next) => {
+export const updatePhraseById: Controller = async (req, res, next) => {
   if (!validationResult(req).isEmpty()) {
     return next(new HttpError(messages.INVALID_DATA, codes.BAD_REQUEST));
   }
 
   const { phraseId } = req.params;
   const { phrase } = req.body;
+  let updatedPhrase;
 
-  const phraseIndexToUpdate = PHRASES.findIndex(({ id }) => id === phraseId);
+  try {
+    // it returns not updated object
+    // updatedPhrase = await Phrase.findByIdAndUpdate(phraseId, { phrase });
+    updatedPhrase = await Phrase.findById(phraseId);
+  } catch {
+    return next(getInternalError());
+  }
 
-  if (phraseIndexToUpdate === -1) {
+  if (!updatedPhrase) {
     return next(new HttpError(messages.RESOURCE_NOT_FOUND, codes.NOT_FOUND));
   }
 
-  PHRASES[phraseIndexToUpdate].phrase = phrase;
+  updatedPhrase.phrase = phrase;
 
-  const updatedPhrase = {
-    ...PHRASES[phraseIndexToUpdate],
-    phrase,
-  };
+  try {
+    await updatedPhrase.save();
+  } catch {
+    return next(getInternalError());
+  }
 
-  res.json(updatedPhrase);
+  res.json(updatedPhrase.toObject({ getters: true }));
 };
 
-export const deletePhraseById: Controller = (req, res, next) => {
+export const deletePhraseById: Controller = async (req, res, next) => {
   const { phraseId } = req.params;
+  let phrase;
 
-  const phraseIndexToDelete = PHRASES.findIndex(({ id }) => id === phraseId);
+  try {
+    phrase = await Phrase.findById(phraseId);
+  } catch {
+    return next(getInternalError());
+  }
 
-  if (phraseIndexToDelete === -1) {
+  if (!phrase) {
     return next(new HttpError(messages.RESOURCE_NOT_FOUND, codes.NOT_FOUND));
   }
 
-  PHRASES.splice(phraseIndexToDelete, 1);
-
-  res.sendStatus(codes.OK);
+  try {
+    await phrase.remove();
+    res.sendStatus(codes.OK);
+  } catch {
+    return next(getInternalError());
+  }
 };

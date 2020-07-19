@@ -8,13 +8,13 @@
     "strict": true,
     "noImplicitAny": true,
     "moduleResolution": "node",
-    "baseUrl": "src",
     "esModuleInterop": true,
     "allowJs": true,
     "lib": ["es6"],
     "resolveJsonModule": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "baseUrl": "src"
   },
   "include": ["src"],
   "exclude": ["node_modules", "build"]

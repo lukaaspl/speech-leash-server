@@ -1,5 +1,3 @@
-import { matchedData } from "express-validator";
-
 export const codes = {
   OK: 200,
   CREATED: 201,
@@ -16,4 +14,5 @@ export const messages = {
   INVALID_CREDENTIALS: "Invalid credentials",
   RESOURCE_NOT_FOUND: "Resource was not found",
   EMAIL_ALREADY_EXISTS: "E-mail already exists",
+  UNEXPECTED_ERROR: "An unexpected error occurred",
 };

@@ -1,6 +1,6 @@
+import * as phrasesControllers from "controllers/phrases";
 import express from "express";
 import { check } from "express-validator";
-import * as phrasesControllers from "../controllers/phrases";
 
 const router = express.Router();
 

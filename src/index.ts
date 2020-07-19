@@ -1,9 +1,10 @@
 import bodyParser from "body-parser";
+import { codes } from "domains/responses";
 import express, { NextFunction, Request, Response } from "express";
-import { codes } from "./domains/responses";
-import HttpError from "./models/http-error";
-import phrasesRouter from "./routes/phrases";
-import usersRouter from "./routes/users";
+import HttpError from "models/http-error";
+import mongoose from "mongoose";
+import phrasesRouter from "routes/phrases";
+import usersRouter from "routes/users";
 
 const app: express.Application = express();
 
@@ -35,6 +36,18 @@ app.use((error: any, req: Request, res: Response, next: NextFunction) => {
   res.sendStatus(errorCode);
 });
 
-app.listen(5000, () => {
-  console.log("Server is up and running");
-});
+(async () => {
+  try {
+    await mongoose.connect("mongodb://localhost:27017/", {
+      dbName: "speech-leash",
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+
+    app.listen(5000, () => {
+      console.log("Server is up and running");
+    });
+  } catch {
+    console.log("An error occurred while establishing the connection");
+  }
+})();
