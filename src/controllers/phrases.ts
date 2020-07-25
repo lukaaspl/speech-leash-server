@@ -3,7 +3,7 @@ import { Controller } from "domains/controller";
 import { codes, messages } from "domains/responses";
 import { validationResult } from "express-validator";
 import HttpError from "models/http-error";
-import Phrase, { IPhrase } from "models/phrase";
+import Phrase, { IPhrase, PHRASE_MODEL_NAME } from "models/phrase";
 import User from "models/user";
 import { startSession } from "mongoose";
 import { getInternalError } from "utils/errors";
@@ -46,7 +46,7 @@ export const getPhrasesByUserId: Controller = async (req, res, next) => {
     // just path seems not to work in this case
     user = await User.findById(userId).populate({
       path: "phrases",
-      model: "Phrase",
+      model: PHRASE_MODEL_NAME,
     });
   } catch {
     return next(getInternalError());
