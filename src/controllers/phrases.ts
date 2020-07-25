@@ -75,7 +75,6 @@ export const addPhrase: Controller = async (req, res, next) => {
   try {
     foundUser = await User.findById(userId);
   } catch (e) {
-    console.log(e);
     return next(getInternalError());
   }
 
@@ -170,7 +169,6 @@ export const deletePhraseById: Controller = async (req, res, next) => {
 
     await session.commitTransaction();
   } catch (e) {
-    console.log(e);
     return next(getInternalError());
   }
 
