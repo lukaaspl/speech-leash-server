@@ -1,10 +1,13 @@
 import bodyParser from "body-parser";
 import { codes } from "domains/responses";
+import { config } from "dotenv";
 import express, { NextFunction, Request, Response } from "express";
 import HttpError from "models/http-error";
 import mongoose from "mongoose";
 import phrasesRouter from "routes/phrases";
 import usersRouter from "routes/users";
+
+config();
 
 const app: express.Application = express();
 
@@ -38,10 +41,10 @@ app.use((error: any, req: Request, res: Response, next: NextFunction) => {
 
 (async () => {
   try {
-    await mongoose.connect("mongodb://localhost:27017/", {
-      dbName: "speech-leash",
+    await mongoose.connect(<string>process.env.DB_CONNECTION_URI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
+      useCreateIndex: true,
     });
 
     app.listen(5000, () => {

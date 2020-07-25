@@ -1,8 +1,11 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 import { Controller } from "domains/controller";
 import { codes, messages } from "domains/responses";
 import { validationResult } from "express-validator";
 import HttpError from "models/http-error";
-import Phrase from "models/phrase";
+import Phrase, { IPhrase } from "models/phrase";
+import User from "models/user";
+import { startSession } from "mongoose";
 import { getInternalError } from "utils/errors";
 
 export const getPhrases: Controller = async (req, res, next) => {
@@ -36,19 +39,29 @@ export const getPhraseById: Controller = async (req, res, next) => {
 
 export const getPhrasesByUserId: Controller = async (req, res, next) => {
   const { userId } = req.params;
-  let phrases;
+  let user;
 
   try {
-    phrases = await Phrase.find({ userId: userId });
+    // probably need to pass options object with path and model when populating an array
+    // just path seems not to work in this case
+    user = await User.findById(userId).populate({
+      path: "phrases",
+      model: "Phrase",
+    });
   } catch {
     return next(getInternalError());
   }
 
-  const transformedPhrases = phrases.map((phrase) =>
-    phrase.toObject({ getters: true })
+  if (!user) {
+    return next(new HttpError(messages.RESOURCE_NOT_FOUND, codes.NOT_FOUND));
+  }
+
+  const transformedUserPhrases = user.phrases.map((phrase) =>
+    // casting because of populate
+    ((phrase as unknown) as IPhrase).toObject({ getters: true })
   );
 
-  res.json(transformedPhrases);
+  res.json(transformedUserPhrases);
 };
 
 export const addPhrase: Controller = async (req, res, next) => {
@@ -56,19 +69,43 @@ export const addPhrase: Controller = async (req, res, next) => {
     return next(new HttpError(messages.INVALID_DATA, codes.BAD_REQUEST));
   }
 
+  const { userId, phrase, translations } = req.body;
+  let foundUser;
+
+  try {
+    foundUser = await User.findById(userId);
+  } catch (e) {
+    console.log(e);
+    return next(getInternalError());
+  }
+
+  if (!foundUser) {
+    return next(new HttpError(messages.RESOURCE_NOT_FOUND, codes.NOT_FOUND));
+  }
+
   const newPhrase = new Phrase({
-    userId: "dummy-user-id",
-    phrase: req.body.phrase,
+    userId,
+    phrase,
+    translations,
     creationDate: Date.now(),
   });
 
   try {
-    await newPhrase.save();
-  } catch {
+    const session = await startSession();
+    session.startTransaction();
+
+    await newPhrase.save({ session });
+
+    // casting because of populate
+    ((foundUser.phrases as unknown) as IPhrase[]).push(newPhrase);
+
+    await foundUser.save({ session });
+    await session.commitTransaction();
+  } catch (e) {
     return next(getInternalError());
   }
 
-  res.json(newPhrase.toObject({ getters: true }));
+  res.status(codes.CREATED).json(newPhrase.toObject({ getters: true }));
 };
 
 export const updatePhraseById: Controller = async (req, res, next) => {
@@ -77,7 +114,7 @@ export const updatePhraseById: Controller = async (req, res, next) => {
   }
 
   const { phraseId } = req.params;
-  const { phrase } = req.body;
+  const { phrase, translations } = req.body;
   let updatedPhrase;
 
   try {
@@ -93,6 +130,7 @@ export const updatePhraseById: Controller = async (req, res, next) => {
   }
 
   updatedPhrase.phrase = phrase;
+  updatedPhrase.translations = translations;
 
   try {
     await updatedPhrase.save();
@@ -108,7 +146,7 @@ export const deletePhraseById: Controller = async (req, res, next) => {
   let phrase;
 
   try {
-    phrase = await Phrase.findById(phraseId);
+    phrase = await Phrase.findById(phraseId).populate("userId");
   } catch {
     return next(getInternalError());
   }
@@ -118,9 +156,23 @@ export const deletePhraseById: Controller = async (req, res, next) => {
   }
 
   try {
-    await phrase.remove();
-    res.sendStatus(codes.OK);
-  } catch {
+    const session = await startSession();
+    session.startTransaction();
+
+    //@ts-ignore
+    await phrase.remove({ session });
+
+    //@ts-ignore
+    phrase.userId.phrases.pull(phrase);
+
+    //@ts-ignore
+    await phrase.userId.save({ session });
+
+    await session.commitTransaction();
+  } catch (e) {
+    console.log(e);
     return next(getInternalError());
   }
+
+  res.sendStatus(codes.OK);
 };

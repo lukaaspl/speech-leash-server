@@ -4,10 +4,10 @@ import { check } from "express-validator";
 
 const router = express.Router();
 
-const phraseValidator = check("phrase")
-  .notEmpty()
-  .isString()
-  .isLength({ min: 2, max: 100 });
+const phraseValidators = [
+  check("phrase").notEmpty().isString(),
+  check("translations").notEmpty().isArray(),
+];
 
 router.get("/", phrasesControllers.getPhrases);
 
@@ -15,11 +15,11 @@ router.get("/:phraseId", phrasesControllers.getPhraseById);
 
 router.get("/user/:userId", phrasesControllers.getPhrasesByUserId);
 
-router.post("/", phraseValidator, phrasesControllers.addPhrase);
+router.post("/", phraseValidators, phrasesControllers.addPhrase);
 
 router.patch(
   "/:phraseId",
-  phraseValidator,
+  phraseValidators,
   phrasesControllers.updatePhraseById
 );
 
