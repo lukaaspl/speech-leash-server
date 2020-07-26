@@ -47,7 +47,7 @@ export const register: Controller = async (req, res, next) => {
   }
 
   const { name, email, password } = req.body;
-  let emailAlreadyExists;
+  let emailAlreadyExists: boolean;
 
   try {
     emailAlreadyExists = Boolean(await User.findOne({ email }));

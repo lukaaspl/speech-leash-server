@@ -1,8 +1,8 @@
 import bodyParser from "body-parser";
-import { codes } from "domains/responses";
 import { config } from "dotenv";
-import express, { NextFunction, Request, Response } from "express";
-import HttpError from "models/http-error";
+import express from "express";
+import errorHandler from "middlewares/errorHandler";
+import notFound from "middlewares/notFound";
 import mongoose from "mongoose";
 import phrasesRouter from "routes/phrases";
 import usersRouter from "routes/users";
@@ -12,43 +12,23 @@ config();
 const app: express.Application = express();
 
 app.use(bodyParser.json());
-
 app.use("/phrases", phrasesRouter);
-
 app.use("/users", usersRouter);
-
-app.use(() => {
-  throw new HttpError("Route not found", codes.NOT_FOUND);
-});
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-app.use((error: any, req: Request, res: Response, next: NextFunction) => {
-  if (res.headersSent) {
-    return next(error);
-  }
-
-  const errorCode = error.code || codes.INTERNAL_SERVER_ERROR;
-
-  if (error.message) {
-    res.status(errorCode).json({
-      message: error.message,
-    });
-    return;
-  }
-
-  res.sendStatus(errorCode);
-});
+app.use(notFound);
+app.use(errorHandler);
 
 (async () => {
+  const { DB_CONNECTION_URI, PORT } = process.env;
+
   try {
-    await mongoose.connect(<string>process.env.DB_CONNECTION_URI, {
+    await mongoose.connect(<string>DB_CONNECTION_URI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
       useCreateIndex: true,
     });
 
-    app.listen(5000, () => {
-      console.log("Server is up and running");
+    app.listen(PORT, () => {
+      console.log(`Server is up and running on port ${PORT}`);
     });
   } catch {
     console.log("An error occurred while establishing the connection");
